@@ -43,10 +43,10 @@ module Docpipe
 
     it 'runs the first filter in chain' do
       filter_class.stub(new: filter)
-      filter.should_receive(:call).with(document_path: 'doc.pdf')
+      filter.should_receive(:call).with(document_path: 'doc.pdf', output_path: 'out/x')
       pipeline.use filter_class, size: 1000
       pipeline.build
-      pipeline.run('doc.pdf')
+      pipeline.run('doc.pdf', output_path: 'out/x')
     end
   end
 end

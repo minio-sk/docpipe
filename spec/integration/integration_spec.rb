@@ -8,6 +8,13 @@ describe Docpipe do
     pipeline.run('document.pdf')
   end
 
+  it 'runs simple pipeline which extracts images' do
+    pipeline = Docpipe.build do |pipeline|
+      pipeline.use Docpipe::ExtractImages, dpi: 200, format: 'jpeg'
+    end
+    pipeline.run('spec/integration/fixtures/document.pdf', output_path: 'spec/integration/fixtures')
+  end
+
   # it 'creates pipeline and processes document' do
   #   pipeline = Docpipe::Pipeline.new do |pipeline|
   #     pipeline.use Docpipe::ExtractImages, size: 5000, format: 'gif' do |pipeline|

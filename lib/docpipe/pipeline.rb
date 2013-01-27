@@ -19,8 +19,8 @@ module Docpipe
       end while not @filter_definition_chain.empty?
     end
 
-    def run(path)
-      @filter_chain.first.call(document_path: path)
+    def run(path, env = {})
+      @filter_chain.first.call(env.merge(document_path: path))
     end
 
     class FilterConfiguration
