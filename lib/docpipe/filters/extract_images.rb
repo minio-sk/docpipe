@@ -1,29 +1,24 @@
+require 'docpipe/commands/ghostscript'
+require 'docpipe/base_name'
+
 module Docpipe
   class ExtractImages
     def initialize(next_filter, inner_pipeline, options = {})
+      @pdf_to_images = options[:pdf_to_images] || Ghostscript.new
       @format = options[:format]
       @dpi = options[:dpi]
-      @command = options[:command] || Docpipe::Command.new
+      @output_lambda = options[:output] || lambda { |document_name| "#{document_name}_%00d.#{@format}" }
       @next_filter = next_filter
       @inner_pipeline = inner_pipeline
     end
 
     def call(env)
-      filename = File.basename(env[:document_path], File.extname(env[:document_path]))
-      output_filename = "#{filename}-%00d.#{@format}"
-      output_glob = "#{filename}-*.#{@format}"
-      output_path = if env[:output_path]
-                      File.join(env[:output_path], output_filename)
-                    else
-                      output_filename
-                    end
-      @command.run("gs -dNOPAUSE -dBATCH -sDEVICE=? -r? -sOutputFile=? ?", @format, @dpi, output_path, env[:document_path])
-      Dir.glob(output_glob).each do |page|
-        @inner_pipeline.run(page)
-      end if @inner_pipeline
+      output_path = File.join(env[:output_path], @output_lambda.call(BaseName.filename(env[:document_path])))
+      pages = @pdf_to_images.convert(env[:document_path], output_path, @format, @dpi)
+      pages.each do |page_number, page_path|
+        @inner_pipeline.run(env.merge(document_path: page_path, page_number: page_number, parent_document_path: env[:document_path]))
+      end
       @next_filter.call(env)
-    rescue Docpipe::CommandFailed => e
-      raise Docpipe::ExtractionFailed, e.message
     end
   end
 end

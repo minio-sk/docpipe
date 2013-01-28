@@ -12,7 +12,16 @@ describe Docpipe do
     pipeline = Docpipe.build do |pipeline|
       pipeline.use Docpipe::ExtractImages, dpi: 200, format: 'jpeg'
     end
-    pipeline.run('spec/integration/fixtures/document.pdf', output_path: 'spec/integration/fixtures')
+    pipeline.run(document_path: 'spec/integration/fixtures/document.pdf', output_path: 'spec/integration/fixtures')
+  end
+
+  it 'runs pipeline with inner pipeline' do
+    pipeline = Docpipe.build do |pipeline|
+      pipeline.use Docpipe::ExtractImages, dpi: 200, format: 'jpeg', output: lambda { |document_name| "1000x/#{document_name}_%00d.jpg" } do |pipeline|
+        pipeline.use Docpipe::ExtractText, language: 'ces', output: lambda { |document_name| "pages/#{document_name}.txt" }
+      end
+    end
+    pipeline.run(document_path: 'spec/integration/fixtures/document.pdf', output_path: 'spec/integration/fixtures')
   end
 
   # it 'creates pipeline and processes document' do

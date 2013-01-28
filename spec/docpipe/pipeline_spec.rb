@@ -9,12 +9,14 @@ module Docpipe
     let(:another_filter_class) { mock(:AnotherFilterClass) }
     let(:another_filter) { mock(:AnotherFilter) }
     let(:noop_filter) { mock(:NoopFilter) }
+    let(:inner_pipeline) { mock(:InnerPipeline) }
+    let(:inner_pipeline_builder) { stub(:PipelineBuilder, build: inner_pipeline) }
 
-    subject(:pipeline) { Pipeline.new(noop: noop_filter) }
+    subject(:pipeline) { Pipeline.new(noop: noop_filter, inner_pipeline_builder: inner_pipeline_builder) }
 
-    it 'initializes each filter with next filter and its options' do
+    it 'initializes each filter with next filter, empty inner pipeline and its options' do
       another_filter_class.stub(new: another_filter)
-      filter_class.should_receive(:new).with(another_filter, NO_INNER_PIPELINE, { size: 1000 })
+      filter_class.should_receive(:new).with(another_filter, inner_pipeline, { size: 1000 })
 
       pipeline.use filter_class, size: 1000
       pipeline.use another_filter_class
@@ -22,21 +24,19 @@ module Docpipe
     end
 
     it 'passes special noop filter to last filter in chain' do
-      filter_class.should_receive(:new).with(noop_filter, NO_INNER_PIPELINE, { size: 1000 })
+      filter_class.should_receive(:new).with(noop_filter, inner_pipeline, { size: 1000 })
       pipeline.use filter_class, size: 1000
       pipeline.build
     end
 
     context 'when composing inner pipelines' do
-      it 'constructs the outer filter with reference to the inner pipeline' do
+      it 'yields a fresh pipeline to the inner pipeline defining block' do
+        filter_class.as_null_object
+        pipeline = Pipeline.new(noop: noop_filter, inner_pipeline_builder: inner_pipeline_builder)
         block = lambda {}
-        inner_pipeline = stub
-        block.stub(call: inner_pipeline)
-        another_filter_class.stub(new: another_filter)
-        filter_class.should_receive(:new).with(another_filter, inner_pipeline, {})
+        inner_pipeline_builder.should_receive(:build).with(&block)
 
         pipeline.use filter_class, &block
-        pipeline.use another_filter_class
         pipeline.build
       end
     end
@@ -46,7 +46,7 @@ module Docpipe
       filter.should_receive(:call).with(document_path: 'doc.pdf', output_path: 'out/x')
       pipeline.use filter_class, size: 1000
       pipeline.build
-      pipeline.run('doc.pdf', output_path: 'out/x')
+      pipeline.run(document_path: 'doc.pdf', output_path: 'out/x')
     end
   end
 end
