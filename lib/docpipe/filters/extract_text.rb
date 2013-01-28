@@ -14,6 +14,7 @@ module Docpipe
 
     def call(env)
       output_path = File.join(env[:output_path], @output_lambda.call(BaseName.filename(env[:document_path]) + ".txt"))
+      FileUtils.mkdir_p(File.dirname(output_path)) unless File.exist?(File.dirname(output_path))
       unless @dte.extract(env[:page_number], env[:parent_document_path], output_path)
         @ocr.extract(env[:document_path], output_path, @language)
       end
