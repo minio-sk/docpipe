@@ -5,6 +5,7 @@ require 'docpipe/command'
 require 'docpipe/filters/noop_filter'
 require 'docpipe/filters/extract_images'
 require 'docpipe/filters/extract_text'
+require 'docpipe/filters/resize_image'
 
 module Docpipe
   class CommandFailed < StandardError; end

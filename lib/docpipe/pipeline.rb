@@ -18,12 +18,11 @@ module Docpipe
       while not @filter_definition_chain.empty?
         filter_configuration = @filter_definition_chain.pop
         @last_filter = filter_configuration.build(@last_filter, @inner_pipeline_builder)
-        @filter_chain << @last_filter
       end
     end
 
     def run(env = {})
-      @filter_chain.first.call(env) if @filter_chain.first
+      @last_filter.call(env)
     end
 
     class FilterConfiguration
